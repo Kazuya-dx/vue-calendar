@@ -1,42 +1,148 @@
 <template>
   <div>
-    <p>カレンダー</p>
-    <button @click="goLastMonth()">前の週</button>
-    <button @click="goNextMonth()">次の週</button>
+    <button @click="goLastMonth()">前の月</button>
+    <button @click="goNextMonth()">次の月</button>
 
     <!-- TODO: key の設定方法を見直す -->
-    <h2>{{ getYearMonth(getLastMonth(currentDate)) }}</h2>
-    <div
-      v-for="(week, index) in calendars.lastMonth"
-      :key="week[0] + index"
-      style="display: flex"
-    >
-      <div v-for="date in week" :key="date" style="margin: 0 8px">
-        {{ getDay(date) }}
+    <div style="display: flex">
+      <!-- 先月 -->
+      <div style="margin: 0 4px">
+        <div
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 275px;
+            height: 40px;
+            background-color: #aaa;
+            color: #fff;
+            font-weight: 600;
+          "
+        >
+          {{ getYearMonth(getLastMonth(currentDate)) }}
+        </div>
+        <table style="background-color: #efefef">
+          <thead>
+            <th
+              v-for="day in dayOfWeeks"
+              :key="day"
+              style="background-color: #fff; width: 35px; height: 35px"
+            >
+              {{ day }}
+            </th>
+          </thead>
+          <tbody>
+            <tr v-for="week in calendars.lastMonth" :key="'last-' + week">
+              <td
+                v-for="date in week"
+                :key="'last-' + date"
+                :class="{
+                  'bg-base': isLastMonth(date),
+                  'bg-gray': !isLastMonth(date),
+                  'bg-red': isBasePeriod(date) && isLastMonth(date),
+                  'bg-blue': isComparisonPeriod(date) && isLastMonth(date),
+                }"
+                style="width: 35px; height: 35px; text-align: center"
+              >
+                {{ getDay(date) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
-    <hr />
 
-    <h2>{{ getYearMonth(currentDate) }}</h2>
-    <div
-      v-for="(week, index) in calendars.thisMonth"
-      :key="week[0] + index"
-      style="display: flex"
-    >
-      <div v-for="date in week" :key="date" style="margin: 0 8px">
-        {{ getDay(date) }}
+      <!-- 今月 -->
+      <div style="margin: 0 4px">
+        <div
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 275px;
+            height: 40px;
+            background-color: #aaa;
+            color: #fff;
+            font-weight: 600;
+          "
+        >
+          {{ getYearMonth(currentDate) }}
+        </div>
+        <table style="background-color: #efefef">
+          <thead>
+            <th
+              v-for="day in dayOfWeeks"
+              :key="day"
+              style="background-color: #fff; width: 35px; height: 35px"
+            >
+              {{ day }}
+            </th>
+          </thead>
+          <tbody>
+            <tr v-for="week in calendars.thisMonth" :key="'this-' + week">
+              <td
+                v-for="date in week"
+                :key="'this-' + date"
+                :class="{
+                  'bg-base': isThisMonth(date),
+                  'bg-gray': !isThisMonth(date),
+                  'bg-red': isBasePeriod(date) && isThisMonth(date),
+                  'bg-blue': isComparisonPeriod(date) && isThisMonth(date),
+                }"
+                class="date"
+                style="width: 35px; height: 35px; text-align: center"
+              >
+                {{ getDay(date) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
-    <hr />
 
-    <h2>{{ getYearMonth(getNextMonth(currentDate)) }}</h2>
-    <div
-      v-for="(week, index) in calendars.nextMonth"
-      :key="week[0] + index"
-      style="display: flex"
-    >
-      <div v-for="date in week" :key="date" style="margin: 0 8px">
-        {{ getDay(date) }}
+      <!-- 来月 -->
+      <div style="margin: 0 4px">
+        <div
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 275px;
+            height: 40px;
+            background-color: #aaa;
+            color: #fff;
+            font-weight: 600;
+          "
+        >
+          {{ getYearMonth(getNextMonth(currentDate)) }}
+        </div>
+        <table style="background-color: #efefef">
+          <thead>
+            <th
+              v-for="day in dayOfWeeks"
+              :key="day"
+              style="background-color: #fff; width: 35px; height: 35px"
+            >
+              {{ day }}
+            </th>
+          </thead>
+          <tbody>
+            <tr v-for="week in calendars.nextMonth" :key="'next-' + week">
+              <td
+                v-for="date in week"
+                :key="'next-' + date"
+                :class="{
+                  'bg-base': isNextMonth(date),
+                  'bg-gray': !isNextMonth(date),
+                  'bg-red': isBasePeriod(date) && isNextMonth(date),
+                  'bg-blue': isComparisonPeriod(date) && isNextMonth(date),
+                }"
+                class="date"
+                style="width: 35px; height: 35px; text-align: center"
+              >
+                {{ getDay(date) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -49,7 +155,12 @@ import moment from "moment";
 export default Vue.extend({
   data() {
     return {
+      dayOfWeeks: ["月", "火", "水", "木", "金", "土", "日"],
       currentDate: moment().format("YYYY-MM-DD"),
+      baseStart: "2022-07-12",
+      baseEnd: "2022-07-26",
+      comparisonStart: "2022-08-02",
+      comparisonEnd: "2022-08-10",
     };
   },
 
@@ -78,6 +189,36 @@ export default Vue.extend({
         .add(-1, "month")
         .format("YYYY-MM-DD");
     },
+    isThisMonth(targetDate: string) {
+      return (
+        moment(targetDate).format("YYYY-MM") ===
+        moment(this.currentDate).format("YYYY-MM")
+      );
+    },
+    isNextMonth(targetDate: string) {
+      return (
+        moment(targetDate).format("YYYY-MM") ===
+        moment(this.currentDate).add(1, "month").format("YYYY-MM")
+      );
+    },
+    isLastMonth(targetDate: string) {
+      return (
+        moment(targetDate).format("YYYY-MM") ===
+        moment(this.currentDate).add(-1, "month").format("YYYY-MM")
+      );
+    },
+    isBasePeriod(targetDate: string) {
+      return moment(targetDate).isBetween(
+        moment(this.baseStart),
+        moment(this.baseEnd)
+      );
+    },
+    isComparisonPeriod(targetDate: string) {
+      return moment(targetDate).isBetween(
+        moment(this.comparisonStart),
+        moment(this.comparisonEnd)
+      );
+    },
     getLastMonth(targetDate: string) {
       return moment(targetDate).add(-1, "month").format("YYYY-MM-DD");
     },
@@ -87,11 +228,11 @@ export default Vue.extend({
     },
 
     getYearMonth(targetDate: string) {
-      return moment(targetDate).format("YYYY-MM");
+      return moment(targetDate).format("YYYY年MM月");
     },
 
     getDay(targetDate: string) {
-      return moment(targetDate).format("DD");
+      return moment(targetDate).format("DD").replace(/^0+/, "");
     },
 
     /**
@@ -100,12 +241,14 @@ export default Vue.extend({
      */
     getStartDate(targetDate: string) {
       let date = moment(targetDate);
-      // その月の最初の日を取得
+      // 月初を取得
       date.startOf("month");
       // 曜日を算出(日曜日:0, 月曜日:1, ...)
       const dayOfWeekNum = date.day();
-      // カレンダーの最初の日付を返す(月の最初の日から引き算より月曜日を算出)
-      return date.subtract(dayOfWeekNum - 1, "days");
+      // 月初が日曜日の場合、１ヶ月前の「月曜日」を返す
+      if (dayOfWeekNum === 0) return date.subtract(dayOfWeekNum + 6, "days");
+      // 月初が日曜日以外の場合、その月の「月曜日」を返す
+      else return date.subtract(dayOfWeekNum - 1, "days");
     },
 
     /**
@@ -152,3 +295,25 @@ export default Vue.extend({
   },
 });
 </script>
+
+<style scoped>
+.bg-base {
+  background-color: #fff;
+  cursor: pointer;
+}
+.bg-base:hover {
+  background-color: orange;
+}
+.bg-gray {
+  background-color: #efefef;
+}
+.bg-red {
+  background-color: #f38181;
+}
+.bg-blue {
+  background-color: #95e1d3;
+}
+.bg-orange:hover {
+  background-color: orange;
+}
+</style>
