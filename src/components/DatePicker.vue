@@ -1,7 +1,12 @@
 <template>
   <div>
+    <div>期間: {{ baseStart }} --- {{ baseEnd }}</div>
+    <div>比較: {{ comparisonStart }} --- {{ comparisonEnd }}</div>
+    <div>選択中の期間タイプ: {{ periodType }}</div>
     <button @click="goLastMonth()">前の月</button>
     <button @click="goNextMonth()">次の月</button>
+    <button @click="periodType = 'base'">基準期間を選択</button>
+    <button @click="periodType = 'compare'">比較期間を選択</button>
 
     <!-- TODO: key の設定方法を見直す -->
     <div style="display: flex">
@@ -35,14 +40,21 @@
             <tr v-for="week in calendars.lastMonth" :key="'last-' + week">
               <td
                 v-for="date in week"
-                :key="'last-' + date"
+                :key="'last-' + date + mode"
                 :class="{
                   'bg-base': isLastMonth(date),
                   'bg-gray': !isLastMonth(date),
-                  'bg-red': isBasePeriod(date) && isLastMonth(date),
-                  'bg-blue': isComparisonPeriod(date) && isLastMonth(date),
+                  'bg-red':
+                    (isBasePeriod(date) || isSelectingBasePeriod(date)) &&
+                    isLastMonth(date),
+                  'bg-blue':
+                    (isComparisonPeriod(date) ||
+                      isSelectingComparisonPeriod(date)) &&
+                    isLastMonth(date),
                 }"
                 style="width: 35px; height: 35px; text-align: center"
+                @click="clickDate(date)"
+                @mouseover="hoverDate(date)"
               >
                 {{ getDay(date) }}
               </td>
@@ -81,15 +93,22 @@
             <tr v-for="week in calendars.thisMonth" :key="'this-' + week">
               <td
                 v-for="date in week"
-                :key="'this-' + date"
+                :key="'this-' + date + mode"
                 :class="{
                   'bg-base': isThisMonth(date),
                   'bg-gray': !isThisMonth(date),
-                  'bg-red': isBasePeriod(date) && isThisMonth(date),
-                  'bg-blue': isComparisonPeriod(date) && isThisMonth(date),
+                  'bg-red':
+                    (isBasePeriod(date) || isSelectingBasePeriod(date)) &&
+                    isThisMonth(date),
+                  'bg-blue':
+                    (isComparisonPeriod(date) ||
+                      isSelectingComparisonPeriod(date)) &&
+                    isThisMonth(date),
                 }"
                 class="date"
                 style="width: 35px; height: 35px; text-align: center"
+                @click="clickDate(date)"
+                @mouseover="hoverDate(date)"
               >
                 {{ getDay(date) }}
               </td>
@@ -128,15 +147,22 @@
             <tr v-for="week in calendars.nextMonth" :key="'next-' + week">
               <td
                 v-for="date in week"
-                :key="'next-' + date"
+                :key="'next-' + date + mode"
                 :class="{
                   'bg-base': isNextMonth(date),
                   'bg-gray': !isNextMonth(date),
-                  'bg-red': isBasePeriod(date) && isNextMonth(date),
-                  'bg-blue': isComparisonPeriod(date) && isNextMonth(date),
+                  'bg-red':
+                    (isBasePeriod(date) || isSelectingBasePeriod(date)) &&
+                    isNextMonth(date),
+                  'bg-blue':
+                    (isComparisonPeriod(date) ||
+                      isSelectingComparisonPeriod(date)) &&
+                    isNextMonth(date),
                 }"
                 class="date"
                 style="width: 35px; height: 35px; text-align: center"
+                @click="clickDate(date)"
+                @mouseover="hoverDate(date)"
               >
                 {{ getDay(date) }}
               </td>
@@ -157,10 +183,13 @@ export default Vue.extend({
     return {
       dayOfWeeks: ["月", "火", "水", "木", "金", "土", "日"],
       currentDate: moment().format("YYYY-MM-DD"),
+      hoveringDate: "",
       baseStart: "2022-07-12",
       baseEnd: "2022-07-26",
       comparisonStart: "2022-08-02",
       comparisonEnd: "2022-08-10",
+      periodType: "base" as "base" | "compare",
+      mode: "preview" as "preview" | "selecting",
     };
   },
 
@@ -209,14 +238,28 @@ export default Vue.extend({
     },
     isBasePeriod(targetDate: string) {
       return moment(targetDate).isBetween(
-        moment(this.baseStart),
-        moment(this.baseEnd)
+        moment(this.baseStart).add(-1, "day"),
+        moment(this.baseEnd).add(1, "day")
       );
     },
     isComparisonPeriod(targetDate: string) {
       return moment(targetDate).isBetween(
-        moment(this.comparisonStart),
-        moment(this.comparisonEnd)
+        moment(this.comparisonStart).add(-1, "day"),
+        moment(this.comparisonEnd).add(1, "day")
+      );
+    },
+    isSelectingBasePeriod(targetDate: string) {
+      if (this.periodType === "compare") return false;
+      return moment(targetDate).isBetween(
+        moment(this.baseStart).add(-1, "day"),
+        moment(this.hoveringDate).add(1, "day")
+      );
+    },
+    isSelectingComparisonPeriod(targetDate: string) {
+      if (this.periodType === "base") return false;
+      return moment(targetDate).isBetween(
+        moment(this.comparisonStart).add(-1, "day"),
+        moment(this.hoveringDate).add(1, "day")
       );
     },
     getLastMonth(targetDate: string) {
@@ -291,6 +334,34 @@ export default Vue.extend({
       }
 
       return calendars;
+    },
+
+    clickDate(targetDate: string) {
+      if (this.mode === "preview") {
+        this.mode = "selecting";
+        if (this.periodType === "base") {
+          this.baseStart = targetDate;
+          this.baseEnd = targetDate;
+        }
+        if (this.periodType === "compare") {
+          this.comparisonStart = targetDate;
+          this.comparisonEnd = targetDate;
+        }
+        return;
+      }
+
+      if (this.mode === "selecting") {
+        this.hoveringDate === "";
+        this.mode = "preview";
+        if (this.periodType === "base") this.baseEnd = targetDate;
+        if (this.periodType === "compare") this.comparisonEnd = targetDate;
+        return;
+      }
+    },
+
+    hoverDate(targetDate: string) {
+      if (this.mode === "preview") return;
+      if (this.mode === "selecting") this.hoveringDate = targetDate;
     },
   },
 });
